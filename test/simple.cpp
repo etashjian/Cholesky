@@ -7,23 +7,24 @@ using namespace Eigen;
 
 int main()
 {
-  MatrixXd A(3, 3);
-  A << 4, -12, -16, 12, 37, -43, -16, -43, 98;
-  cout << "The matrix A is" << endl << A << endl;
+  unsigned dim = 4;
 
-  LLT<MatrixXd> lltOfA(A); // performs decomp
-  MatrixXd L = lltOfA.matrixL();
+  // generate random input matrix (THIS PROBABLY ISN'T TOTALL CORRECT YET)
+  srand(time(NULL));
+  MatrixXd A = MatrixXd::Random(dim, dim);
+  A *= 5;
+  MatrixXd A_t = A.transpose();
+  A += A_t;
 
-  cout << "Solution for Cholesky LL" << endl;
-  cout << "Cholesky L is" << endl << L << endl;
-  cout << "Cholesky L_T is" << endl << L.transpose() << endl;
-  cout << "L * L_T is" << endl << L * L.transpose() << endl << endl;
+  if(dim < 10)
+    cout << "Input Matrix:" << endl << A << endl;
 
-  // try figuring out decomp ourselves
-  L = MatrixXd::Zero(3, 3);
-  DiagonalMatrix<double, Dynamic> D(3);
+  // build L and D
+  MatrixXd L = MatrixXd::Zero(dim, dim);
+  DiagonalMatrix<double, Dynamic> D(dim);
 
-  for(int j = 0; j < 3; ++j)
+  // calculate decomposition
+  for(int j = 0; j < dim; ++j)
   {
     L(j, j) = 1;
     D.diagonal()[j] = A(j, j);
@@ -32,7 +33,7 @@ int main()
       D.diagonal()[j] -= D.diagonal()[k] * L(j,k) * L(j,k);
     }
 
-    for(unsigned i = j + 1; i < 3; ++i)
+    for(unsigned i = j + 1; i < dim; ++i)
     {
       L(i,j) = A(i,j);
       for(int k = 0; k < j; ++k)
@@ -43,8 +44,13 @@ int main()
     }
   }
 
-  cout << "My solution for LDLT" << endl;
-  cout << "L is" << endl << L << endl;
-  cout << "D is" << endl << D.diagonal() << endl;
-  cout << "LDLT is" << endl << L * D * L.transpose() << endl;
+  if(A.isApprox(L * D * L.transpose()))
+  {
+    cout << "TEST PASSED!" << endl;
+  }
+  else
+  {
+    cout << "TEST FAILED!" << endl;
+    cout << L * D * L.transpose() << endl;
+  }
 }
