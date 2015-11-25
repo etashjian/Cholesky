@@ -8,12 +8,19 @@ using namespace Eigen;
 
 int main()
 {
-  unsigned dim = 4096;
+  unsigned dim = 1024;
+  unsigned k1 = 1, k2 = 1; // tridiagonal matrix
 
   // generate random input matrix (THIS PROBABLY ISN'T TOTALL CORRECT YET)
   srand(time(NULL));
   MatrixXd A = MatrixXd::Random(dim, dim);
   A *= 5;
+  // set non banded elements to 0
+  for(int i = 0; i < dim; i++)
+    for(int j = 0; j < dim; j++)
+      if(j < i - k1 || j > i + k2)
+        A(i,j) = 0;
+
   MatrixXd A_t = A.transpose();
   A += A_t;
   MatrixXd A_I = MatrixXd::Identity(dim, dim);
