@@ -6,9 +6,11 @@
 using namespace std;
 using namespace Eigen;
 
+#define B_DIM 2
+
 int main()
 {
-  unsigned dim = 4096;
+  unsigned dim = 1024;
 
   // generate random input matrix (THIS PROBABLY ISN'T TOTALL CORRECT YET)
   srand(time(NULL));
@@ -25,26 +27,34 @@ int main()
 
   // build L and D
   MatrixXd L = MatrixXd::Zero(dim, dim);
-  DiagonalMatrix<double, Dynamic> D(dim);
+  MatrixXd D = MatrixXd::Zero(dim, dim);
+  MatrixXd I = MatrixXd::Identity(B_DIM, B_DIM);
 
-  // calculate decomposition
-  for(int j = 0; j < dim; ++j)
+  // do decomposition
+  for(int j = 0; j < dim; j+=B_DIM)
   {
-    L(j, j) = 1;
-    D.diagonal()[j] = A(j, j);
-    for(int k = 0; k < j; ++k)
+    // calculate D
+    MatrixXd d = A.block<B_DIM, B_DIM>(j, j);
+    for(int k = 0; k < j; k += B_DIM)
     {
-      D.diagonal()[j] -= D.diagonal()[k] * L(j,k) * L(j,k);
+      d -= L.block<B_DIM, B_DIM>(j, k) *
+           D.block<B_DIM, B_DIM>(k, k) *
+           L.block<B_DIM, B_DIM>(j, k).transpose();
     }
+    D.block<B_DIM, B_DIM>(j,j) = d;
 
-    for(unsigned i = j + 1; i < dim; ++i)
+    // calculate L
+    L.block<B_DIM,B_DIM>(j,j) = I;
+    for(int i = j + B_DIM; i < dim; i+=B_DIM)
     {
-      L(i,j) = A(i,j);
-      for(int k = 0; k < j; ++k)
+      L.block<B_DIM,B_DIM>(i, j) = A.block<B_DIM,B_DIM>(i,j);
+      for(int k = 0; k < j; k+=B_DIM)
       {
-        L(i,j) -= L(i,k) * L(j,k) * D.diagonal()[k];
+        L.block<B_DIM,B_DIM>(i,j) -= L.block<B_DIM,B_DIM>(i,k) *
+                                     D.block<B_DIM,B_DIM>(k,k) *
+                                     L.block<B_DIM,B_DIM>(j,k).transpose();
       }
-      L(i,j) /= D.diagonal()[j];
+      L.block<B_DIM,B_DIM>(i,j) *= D.block<B_DIM,B_DIM>(j,j).inverse();
     }
   }
 
