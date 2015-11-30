@@ -39,4 +39,18 @@ void cholesky_eigen_blocked_serial(const Eigen::MatrixXf& A,
                                    Eigen::MatrixXf& L, 
                                    Eigen::MatrixXf& D);
 
+/**
+ * \fn void cholesky_eigen_omp_v1(const Eigen::MatrixXf& A, 
+ *                                Eigen::MatrixXf& L, 
+ *                                Eigen::MatrixXf& D)
+ * \brief Computes the Cholesky LDLT decomposition on Eigen matrix A.
+ *        Decomposition is computed using ompenmp
+ * \param A Input matrix to perform decomposition on
+ * \param L Output matrix corresponding to L matrix of decomposition
+ * \param D Output matrix corresponding to D matrix of decomposition
+ */
+void cholesky_eigen_omp_v1(const Eigen::MatrixXf& A, 
+                           Eigen::MatrixXf& L, 
+                           Eigen::MatrixXf& D);
+
 #endif
