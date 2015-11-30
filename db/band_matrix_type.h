@@ -12,12 +12,16 @@ struct BandMatrix {
     /*-----------------------------------------------------------------------------
      *  get the entry with given row (>=0) and col (>=0)
      *-----------------------------------------------------------------------------*/
-    public:
     data_t              getEntry( const dim_t row, const dim_t col ) const; 
+    inline dim_t        getEntryIdx( const dim_t row, const dim_t col ) const {
+        assert( row-col <= _lowerBand && row-col >= -_upperBand );
+        return col * (_upperBand+_lowerBand+1) + (row-col) + _upperBand;
+    }
+    void                writeEntry( const dim_t row, const dim_t col, const data_t val );
 
-    private:
+//    private:
+
     dim_t               _matDim;
-
     /*-----------------------------------------------------------------------------
      *  _lowerBand : the maximum difference between 
      *                  colId and rowId of non-zero entry below the diagonal
