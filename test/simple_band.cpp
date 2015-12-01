@@ -37,5 +37,23 @@ int main()
     _myTimer.startTimer();
     cholesky_band_serial_index_handling(A, L, D);
     _myTimer.stopTimer();
+<<<<<<< HEAD
     std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
+=======
+    std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second. Speedup=" << _myTimer.cummulativeSpeedup() << "x\n";
+
+    /*
+    // check results
+    cout << "Comparing results... " << flush;
+    int differences = cmp_matrices(result, A);
+    if(differences == 0)
+    {
+    cout << "PASSED!" << endl;
+    }
+    else
+    {
+    cout << "FAILED! - " << differences << " differences" << endl;
+    }
+    */
+>>>>>>> fa65e8062d7b0853d2d340a9f54a6c9ff7b0c27f
 }

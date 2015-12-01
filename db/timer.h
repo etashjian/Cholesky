@@ -10,15 +10,20 @@ struct MyTimer {
     inline void startTimer() { gettimeofday( &start, NULL ); }
     inline void stopTimer() { gettimeofday( &stop, NULL ); }
     inline double elapsedInSec() {
-        double time = ( stop.tv_sec + stop.tv_usec * 1.0 / 1000000 ) - ( start.tv_sec + start.tv_usec * 1.0 / 1000000 );
+        _curr = ( stop.tv_sec + stop.tv_usec * 1.0 / 1000000 ) - ( start.tv_sec + start.tv_usec * 1.0 / 1000000 );
         if( !_dirty ) {
-            _first = time;
+            _first = _curr;
             _dirty = true;
         }
+        return _curr;
+    }
+    inline int cummulativeSpeedup() {
+        assert( _dirty );
+        return static_cast<int>( _curr / _first );
     }
 
     bool _dirty;
-    double _first, _prev;
+    double _first, _prev, _curr;
 };
 
 #endif
