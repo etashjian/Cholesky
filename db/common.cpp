@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <cstdlib>
+#include <iostream>
 
 BandMatrix  createSymmetricPositiveDefiniteBandMatrix( const dim_t matDim, const dim_t bandWidth ) {
     assert( bandWidth < matDim );
@@ -15,9 +16,11 @@ BandMatrix  createSymmetricPositiveDefiniteBandMatrix( const dim_t matDim, const
     bandM._upperBand = bandWidth;
     bandM._vals.assign( matDim * (bandWidth*2+1), 0 );
 
+
     /*-----------------------------------------------------------------------------
      *  generate rand values for matrix entries
      *-----------------------------------------------------------------------------*/
+    std::cout << "dim = " << bandM._matDim << std::endl;
     srand( static_cast<unsigned>(time(0)) );    /* seed */
     for( dim_t i = 0; i < matDim; i++ ) {
         for( dim_t j = 0; j <= bandWidth; j++ ) { /* let diagnoal entires MUCH GREATER than the others */

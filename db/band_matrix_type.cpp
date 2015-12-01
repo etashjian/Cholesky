@@ -13,11 +13,12 @@ data_t BandMatrix::getEntry ( const dim_t row, const dim_t col ) const
 }		
 
 void    BandMatrix::writeEntry( const dim_t row, const dim_t col, const data_t val ) {
-    if( row <0 && row >= _matDim ) return;
-    if( col <0 && col >= _matDim ) return;
+    if( row <0 || row >= _matDim ) return;
+    if( col <0 || col >= _matDim ) return;
     if( row-col > _lowerBand || row-col < -_upperBand ) {
         return;
     } else {
+//        std::cout << "write : " << row << " " << col << std::endl;
         _vals[ getEntryIdx( row, col ) ] = val;
     }
 }

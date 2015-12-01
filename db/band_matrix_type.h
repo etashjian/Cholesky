@@ -6,6 +6,7 @@ typedef float data_t;
 
 #include <vector>
 #include <cassert>
+#include <iostream>
 
 struct BandMatrix {
 
@@ -15,7 +16,9 @@ struct BandMatrix {
     data_t              getEntry( const dim_t row, const dim_t col ) const; 
     inline dim_t        getEntryIdx( const dim_t row, const dim_t col ) const {
         assert( row-col <= _lowerBand && row-col >= -_upperBand );
-        return col * (_upperBand+_lowerBand+1) + (row-col) + _upperBand;
+        const dim_t loc = col * (_upperBand+_lowerBand+1) + (row-col) + _upperBand-1;
+        assert( loc >= 0 && loc < (dim_t)_vals.size() );
+        return loc;
     }
     void                writeEntry( const dim_t row, const dim_t col, const data_t val );
 
