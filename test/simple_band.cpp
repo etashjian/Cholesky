@@ -3,6 +3,7 @@
 #include <db/band_matrix_type.h>
 #include <db/eigen_util.h>
 #include <db/common.h>
+#include <db/timer.h>
 #include <Eigen/Core>
 #include <iostream>
 
@@ -11,39 +12,30 @@ using namespace Eigen;
 
 int main()
 {
-  dim_t dim = 2048;
-  dim_t bandwidth = 1;
+    MyTimer _myTimer;
+    dim_t dim = 1000;
+    dim_t bandwidth = 1;
 
-  // generate random input matrix
-  cout << "Generating input... " << flush;
-  srand(time(NULL));
-  BandMatrix A = createSymmetricPositiveDefiniteBandMatrix(dim, bandwidth);
-  cout << "done" << endl;
+    // generate random input matrix
+    cout << "Generating input... " << flush;
+    _myTimer.startTimer();
+    srand(time(NULL));
+    BandMatrix A = createSymmetricPositiveDefiniteBandMatrix(dim, bandwidth);
+    _myTimer.stopTimer();
+    std::cout << "Elapsed Time to Create Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
 
-  // allocate L and D and compute decomp
-  cout << "Computing serial decomposition... " << flush;
-  BandMatrix L = createEmptyBandMatrix(dim, bandwidth);
-  BandMatrix D = createEmptyBandMatrix(dim, bandwidth);
-  cholesky_band_serial(A, L, D);
-  cout << "done" << endl;
+    // allocate L and D and compute decomp
+    cout << "Computing serial decomposition... " << endl;
+    BandMatrix L = createEmptyBandMatrix(dim, bandwidth);
+    BandMatrix D = createEmptyBandMatrix(dim, bandwidth);
 
-  // compute reference case
-  cout << "Compute reference case... " << flush;
-  MatrixXf A_ref = band_to_eigen(A);
-  MatrixXf L_ref = MatrixXf::Zero(dim, dim);
-  MatrixXf D_ref = MatrixXf::Zero(dim, dim);
-  cholesky_eigen_serial(A_ref, L_ref, D_ref);
-  cout << "done" << endl;
+    _myTimer.startTimer();
+    cholesky_band_serial(A, L, D);
+    _myTimer.stopTimer();
+    std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
 
-  // check results
-  cout << "Comparing results... " << flush;
-  unsigned differences = cmp_matrices(L_ref, L);
-  if(differences == 0)
-  {
-    cout << "PASSED!" << endl;
-  }
-  else
-  {
-    cout << "FAILED! - " << differences << " differences" << endl;
-  }
+    _myTimer.startTimer();
+    cholesky_band_serial_index_handling(A, L, D);
+    _myTimer.stopTimer();
+    std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
 }
