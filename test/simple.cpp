@@ -15,7 +15,7 @@ unsigned cmp_matrices(const MatrixXf& A, const MatrixXf& B)
   {
     for(int j = 0; j < A.cols(); ++j)
     {
-      if(abs(B(i,j) - A(i,j)) > .1)
+      if(abs(B(i,j) - A(i,j)) > .01)
         num_differences++;
     }
   }
@@ -72,6 +72,35 @@ int main()
   D = MatrixXf::Zero(dim, dim);
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_start);
   cholesky_eigen_omp_v1(A, L, D);
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_end);
+  time_elapsed = omp_end.tv_sec + omp_end.tv_nsec / 1e9 -
+                 omp_start.tv_sec - omp_start.tv_nsec / 1e9;
+  time_elapsed *= 1000; // convert to ms
+  cout << time_elapsed << endl;
+
+  // calculate result
+  cout << "Computing reference result... " << flush;
+  result = L * D * L.transpose();
+  cout << "done" << endl;
+
+  // check results
+  cout << "Comparing results... " << flush;
+  differences = cmp_matrices(result, A);
+  if(differences == 0)
+  {
+    cout << "PASSED!" << endl;
+  }
+  else
+  {
+    cout << "FAILED! - " << differences << " differences" << endl;
+  }
+
+  // allocate L and D and compute decomp
+  cout << "Computing openmp decomposition... " << flush;
+  L = MatrixXf::Zero(dim, dim);
+  D = MatrixXf::Zero(dim, dim);
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_start);
+  cholesky_eigen_omp_v2(A, L, D);
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_end);
   time_elapsed = omp_end.tv_sec + omp_end.tv_nsec / 1e9 -
                  omp_start.tv_sec - omp_start.tv_nsec / 1e9;

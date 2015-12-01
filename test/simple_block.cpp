@@ -1,54 +1,97 @@
-#include <db/cholesky_eigen.h>
 #include <db/matrixgen_eigen.h>
+#include <db/cholesky_eigen.h>
 #include <Eigen/Core>
-#include <Eigen/Cholesky>
-#include <Eigen/LU>
 #include <iostream>
 
 using namespace std;
 using namespace Eigen;
 
-#define B_DIM 2
-
-int main()
+unsigned cmp_matrices(const MatrixXf& A, const MatrixXf& B)
 {
-  unsigned dim = 1024;
-  unsigned bandwidth = 3;
-  unsigned range = 5;
+  assert(A.cols() == B.cols() && A.rows() == B.rows());
 
-  // generate random input matrix (THIS PROBABLY ISN'T TOTALL CORRECT YET)
-  srand(time(NULL));
-  MatrixXf A = create_banded_sym_pos_def_eigen_matrix(dim, bandwidth, range);
-
-  if(dim < 10)
-    cout << "Input Matrix:" << endl << A << endl;
-
-  // allocate L and D and compute decomp
-  MatrixXf L = MatrixXf::Zero(dim, dim);
-  MatrixXf D = MatrixXf::Zero(dim, dim);
-  cholesky_eigen_blocked_serial(A, L, D);
-
-  // calculate result
-  MatrixXf result = L * D * L.transpose();
-
-  // check result
   unsigned num_differences = 0;
-  for(int i = 0; i < dim; ++i)
+  for(int i = 0; i < A.rows(); ++i)
   {
-    for(int j = 0; j < dim; ++j)
+    for(int j = 0; j < A.cols(); ++j)
     {
-      if(abs(result(i,j) - A(i,j)) > .1)
+      if(abs(B(i,j) - A(i,j)) > .01)
         num_differences++;
     }
   }
 
-  if(num_differences == 0)
+  return num_differences;
+}
+
+int main()
+{
+  struct timespec serial_start, serial_end, omp_start, omp_end;
+  double time_elapsed;
+  unsigned dim = 2048;
+  unsigned bandwidth = 3;
+  unsigned range = 5;
+
+  // generate random input matrix (THIS PROBABLY ISN'T TOTALL CORRECT YET)
+  cout << "Generating input... " << flush;
+  srand(time(NULL));
+  MatrixXf A = create_banded_sym_pos_def_eigen_matrix(dim, bandwidth, range);
+  cout << "done" << endl;
+
+  // allocate L and D and compute decomp
+  cout << "Computing serial decomposition... " << flush;
+  MatrixXf L = MatrixXf::Zero(dim, dim);
+  MatrixXf D = MatrixXf::Zero(dim, dim);
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &serial_start);
+  cholesky_eigen_blocked_serial(A, L, D);
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &serial_end);
+  time_elapsed = serial_end.tv_sec + serial_end.tv_nsec / 1e9 -
+                 serial_start.tv_sec - serial_start.tv_nsec / 1e9;
+  time_elapsed *= 1000; // convert to ms
+  cout << time_elapsed << endl;
+
+  // calculate result
+  cout << "Computing reference result... " << flush;
+  MatrixXf result = L * D * L.transpose();
+  cout << "done" << endl;
+
+  // check results
+  cout << "Comparing results... " << flush;
+  int differences = cmp_matrices(result, A);
+  if(differences == 0)
   {
-    cout << "TEST PASSED!" << endl;
+    cout << "PASSED!" << endl;
   }
   else
   {
-    cout << "TEST FAILED!" << endl;
-    cout << num_differences << " differences" << endl;
+    cout << "FAILED! - " << differences << " differences" << endl;
+  }
+
+  // allocate L and D and compute decomp
+  cout << "Computing openmp decomposition... " << flush;
+  L = MatrixXf::Zero(dim, dim);
+  D = MatrixXf::Zero(dim, dim);
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_start);
+  cholesky_eigen_blocked_omp_v1(A, L, D);
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_end);
+  time_elapsed = omp_end.tv_sec + omp_end.tv_nsec / 1e9 -
+                 omp_start.tv_sec - omp_start.tv_nsec / 1e9;
+  time_elapsed *= 1000; // convert to ms
+  cout << time_elapsed << endl;
+
+  // calculate result
+  cout << "Computing reference result... " << flush;
+  result = L * D * L.transpose();
+  cout << "done" << endl;
+
+  // check results
+  cout << "Comparing results... " << flush;
+  differences = cmp_matrices(result, A);
+  if(differences == 0)
+  {
+    cout << "PASSED!" << endl;
+  }
+  else
+  {
+    cout << "FAILED! - " << differences << " differences" << endl;
   }
 }
