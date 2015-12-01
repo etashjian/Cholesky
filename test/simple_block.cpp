@@ -1,27 +1,10 @@
-#include <db/matrixgen_eigen.h>
+#include <db/eigen_util.h>
 #include <db/cholesky_eigen.h>
 #include <Eigen/Core>
 #include <iostream>
 
 using namespace std;
 using namespace Eigen;
-
-unsigned cmp_matrices(const MatrixXf& A, const MatrixXf& B)
-{
-  assert(A.cols() == B.cols() && A.rows() == B.rows());
-
-  unsigned num_differences = 0;
-  for(int i = 0; i < A.rows(); ++i)
-  {
-    for(int j = 0; j < A.cols(); ++j)
-    {
-      if(abs(B(i,j) - A(i,j)) > .01)
-        num_differences++;
-    }
-  }
-
-  return num_differences;
-}
 
 int main()
 {
