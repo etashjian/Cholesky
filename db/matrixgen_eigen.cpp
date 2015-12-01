@@ -1,3 +1,9 @@
+/**
+ * \file matrixgen_eigen.cpp
+ * \brief General functions for generating random matrices using the Eigen
+ *        library
+ */
+
 #include "matrixgen_eigen.h"
 
 using namespace Eigen;

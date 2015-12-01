@@ -35,6 +35,7 @@ int main()
   cout << "Generating input... " << flush;
   srand(time(NULL));
   MatrixXf A = create_banded_sym_pos_def_eigen_matrix(dim, bandwidth, range);
+  //MatrixXf A = create_sym_pos_def_eigen_matrix(dim, range);
   cout << "done" << endl;
 
   // allocate L and D and compute decomp
@@ -67,7 +68,7 @@ int main()
   }
 
   // allocate L and D and compute decomp
-  cout << "Computing openmp decomposition... " << flush;
+  cout << "Computing openmp v1 decomposition... " << flush;
   L = MatrixXf::Zero(dim, dim);
   D = MatrixXf::Zero(dim, dim);
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_start);
@@ -96,7 +97,7 @@ int main()
   }
 
   // allocate L and D and compute decomp
-  cout << "Computing openmp decomposition... " << flush;
+  cout << "Computing openmp v2 decomposition... " << flush;
   L = MatrixXf::Zero(dim, dim);
   D = MatrixXf::Zero(dim, dim);
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, &omp_start);

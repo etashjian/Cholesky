@@ -29,4 +29,20 @@ BandMatrix  createSymmetricPositiveDefiniteBandMatrix( const dim_t matDim, const
                 bandM.writeEntry( i+j, i, r );
         }
     }
+
+    return bandM;
+}
+
+BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth)
+{
+    /*-----------------------------------------------------------------------------
+     *  initialize the band matrix
+     *-----------------------------------------------------------------------------*/
+    BandMatrix  bandM;
+    bandM._matDim = matDim;
+    bandM._lowerBand = bandWidth;
+    bandM._upperBand = bandWidth;
+    bandM._vals.assign( matDim * (bandWidth*2+1), 0 );
+
+    return bandM;
 }

@@ -1,3 +1,8 @@
+/**
+ * \file cholesky_eigen.cpp
+ * \brief Functions for computing the cholesky decomp using Eigen library
+ */
+
 #include "cholesky_eigen.h"
 
 using namespace Eigen;
@@ -14,10 +19,10 @@ void cholesky_eigen_serial(const MatrixXf& A, MatrixXf& L, MatrixXf& D)
   for(int j = 0; j < A.rows(); ++j)
   {
     // compute D values
-    D.diagonal()[j] = A(j, j);
+    D(j ,j) = A(j, j);
     for(int k = 0; k < j; ++k)
     {
-      D.diagonal()[j] -= D.diagonal()[k] * L(j,k) * L(j,k);
+      D(j, j) -= D(k, k) * L(j,k) * L(j,k);
     }
 
     // compute L values
@@ -27,9 +32,9 @@ void cholesky_eigen_serial(const MatrixXf& A, MatrixXf& L, MatrixXf& D)
       L(i,j) = A(i,j);
       for(int k = 0; k < j; ++k)
       {
-        L(i,j) -= L(i,k) * L(j,k) * D.diagonal()[k];
+        L(i,j) -= L(i,k) * L(j,k) * D(k,k);
       }
-      L(i,j) /= D.diagonal()[j];
+      L(i,j) /= D(j,j);
     }
   }
 }
@@ -44,10 +49,10 @@ void cholesky_eigen_omp_v1(const MatrixXf& A, MatrixXf& L, MatrixXf& D)
   for(int j = 0; j < A.rows(); ++j)
   {
     // compute D values
-    D.diagonal()[j] = A(j, j);
+    D(j ,j) = A(j, j);
     for(int k = 0; k < j; ++k)
     {
-      D.diagonal()[j] -= D.diagonal()[k] * L(j,k) * L(j,k);
+      D(j, j) -= D(k, k) * L(j,k) * L(j,k);
     }
 
     // compute L values
@@ -58,9 +63,9 @@ void cholesky_eigen_omp_v1(const MatrixXf& A, MatrixXf& L, MatrixXf& D)
       L(i,j) = A(i,j);
       for(int k = 0; k < j; ++k)
       {
-        L(i,j) -= L(i,k) * L(j,k) * D.diagonal()[k];
+        L(i,j) -= L(i,k) * L(j,k) * D(k,k);
       }
-      L(i,j) /= D.diagonal()[j];
+      L(i,j) /= D(j,j);
     }
   }
 }
@@ -75,10 +80,10 @@ void cholesky_eigen_omp_v2(const MatrixXf& A, MatrixXf& L, MatrixXf& D)
   for(int j = 0; j < A.rows(); ++j)
   {
     // compute D values
-    D.diagonal()[j] = A(j, j);
+    D(j ,j) = A(j, j);
     for(int k = 0; k < j; ++k)
     {
-      D.diagonal()[j] -= D.diagonal()[k] * L(j,k) * L(j,k);
+      D(j, j) -= D(k, k) * L(j,k) * L(j,k);
     }
 
     // compute L values
@@ -87,12 +92,12 @@ void cholesky_eigen_omp_v2(const MatrixXf& A, MatrixXf& L, MatrixXf& D)
     for(unsigned i = j + 1; i < A.rows(); ++i)
     {
       float sum = A(i,j);
-      #pragma omp parllel reduction(+:sum)
+      #pragma omp parallel reduction(+:sum)
       for(int k = 0; k < j; ++k)
       {
-        sum -= L(i,k) * L(j,k) * D.diagonal()[k];
+        sum -= L(i,k) * L(j,k) * D(k,k);
       }
-      L(i,j) = sum / D.diagonal()[j];
+      L(i,j) = sum / D(j,j);
     }
   }
 }

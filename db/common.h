@@ -5,4 +5,6 @@
 
 BandMatrix  createSymmetricPositiveDefiniteBandMatrix ( const dim_t matDim, const dim_t bandWidth );
 
+BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth);
+
 #endif
