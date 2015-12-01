@@ -33,7 +33,7 @@ int main()
     _myTimer.startTimer();
     cholesky_band_serial_index_handling(A, L, D);
     _myTimer.stopTimer();
-    std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
+    std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second. Speedup=" << _myTimer.cummulativeSpeedup() << "x\n";
 
     /*
     // check results
