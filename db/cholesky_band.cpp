@@ -3,7 +3,7 @@
  * \brief Functions for computing the cholesky decomp using band matrices
  */
 
-#include "cholesky_band.h"
+#include "db/common.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
@@ -34,6 +34,7 @@ void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
       L.writeEntry(i,j,value);
     }
   }
+  std::cout << "cholesky on band matrix finishes... [serial version]\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
