@@ -9,7 +9,7 @@ using namespace Eigen;
 int main()
 {
     MyTimer _myTimer;
-    dim_t dim = 10;
+    dim_t dim = 1000;
     dim_t bandwidth = 1;
 
     // generate random input matrix
@@ -24,8 +24,14 @@ int main()
     cout << "Computing serial decomposition... " << endl;
     BandMatrix L = createEmptyBandMatrix(dim, bandwidth);
     BandMatrix D = createEmptyBandMatrix(dim, bandwidth);
+
     _myTimer.startTimer();
     cholesky_band_serial(A, L, D);
+    _myTimer.stopTimer();
+    std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
+
+    _myTimer.startTimer();
+    cholesky_band_serial_index_handling(A, L, D);
     _myTimer.stopTimer();
     std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
 

@@ -1,11 +1,20 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <algorithm>
+
 #include "db/band_matrix_type.h"
 
 BandMatrix  createSymmetricPositiveDefiniteBandMatrix ( const dim_t matDim, const dim_t bandWidth );
 
 BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth);
+
+
+
+/*-----------------------------------------------------------------------------
+ *  Version 0 : Lazy Man
+ *  Version 1 : Handling of Index
+ *-----------------------------------------------------------------------------*/
 
 /**
  * \fn void cholesky_band_serial(const BandMatrix& A, 
@@ -19,5 +28,6 @@ BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth);
  */
 void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D);
 
+void cholesky_band_serial_index_handling( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
 
 #endif
