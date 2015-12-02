@@ -14,6 +14,8 @@ BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth);
 /*-----------------------------------------------------------------------------
  *  Version 0 : Lazy Man
  *  Version 1 : Handling of Index
+ *  Version 2 : OMP
+ *  Version 3 : CUDA
  *-----------------------------------------------------------------------------*/
 
 /**
@@ -29,5 +31,9 @@ BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth);
 void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D);
 
 void cholesky_band_serial_index_handling( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
+
+void cholesky_band_parallel_omp( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
+
+void cholesky_band_parallel_cuda( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
 
 #endif
