@@ -28,12 +28,12 @@ BandMatrix  createEmptyBandMatrix(const dim_t matDim, const dim_t bandWidth);
  * \param L Output matrix corresponding to L matrix of decomposition
  * \param D Output matrix corresponding to D matrix of decomposition
  */
-void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D);
+void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D); /* cholesky_band.cpp */
 
-void cholesky_band_serial_index_handling( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
+void cholesky_band_serial_index_handling( const BandMatrix & A, BandMatrix & L, BandMatrix & D ); /* cholesky_band.cpp */
 
 void cholesky_band_parallel_omp( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
 
-void cholesky_band_parallel_cuda( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
+void cholesky_band_parallel_cuda( const BandMatrix & A, BandMatrix & L, BandMatrix & D ); /* cholesky_band_cuda.cu */
 
 #endif
