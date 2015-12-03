@@ -18,7 +18,6 @@ void    BandMatrix::writeEntry( const dim_t row, const dim_t col, const data_t v
     if( row-col > _lowerBand || row-col < -_upperBand ) {
         return;
     } else {
-//        std::cout << "write : " << row << " " << col << std::endl;
         _vals[ getEntryIdx( row, col ) ] = val;
     }
 }

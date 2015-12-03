@@ -1,6 +1,7 @@
 #include <db/eigen_util.h>
 #include <db/cholesky_eigen.h>
 #include <db/common.h>
+#include <db/cholesky_band_cuda.h>
 #include <db/timer.h>
 #include <Eigen/Core>
 #include <iostream>
@@ -12,7 +13,7 @@ int main()
 {
     MyTimer _myTimer;
     dim_t dim = 1000;
-    dim_t bandwidth = 1;
+    dim_t bandwidth = 10;
 
     // generate random input matrix
     cout << "Generating input... " << flush;
@@ -32,11 +33,11 @@ int main()
 
     // allocate L and D and compute decomp
     cout << "Computing serial decomposition... " << endl;
-    BandMatrix L = createEmptyBandMatrix(dim, bandwidth);
-    BandMatrix D = createEmptyBandMatrix(dim, bandwidth);
+    BandMatrix L = createEmptyBandMatrix(dim, bandwidth, 0);
+    BandMatrix D = createEmptyBandMatrix(dim, 0, 0);
 
     _myTimer.startTimer();
-    cholesky_band_serial(A, L, D);
+    cholesky_band_serial_index_handling(A, L, D);
     _myTimer.stopTimer();
     std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
 
@@ -48,7 +49,7 @@ int main()
 
 
     _myTimer.startTimer();
-    cholesky_band_serial_index_handling(A, L, D);
+    cholesky_band_parallel_cuda(A, L, D);
     _myTimer.stopTimer();
     std::cout << "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second. Speedup=" << _myTimer.cummulativeSpeedup() << "x\n";
 
