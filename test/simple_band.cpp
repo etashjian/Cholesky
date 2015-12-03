@@ -12,8 +12,8 @@ using namespace Eigen;
 int main()
 {
     MyTimer _myTimer;
-    dim_t dim = 10;
-    dim_t bandwidth = 3;
+    dim_t dim = 5000;
+    dim_t bandwidth = 4;
 
     // generate random input matrix
     cout << "Generating input... " << flush;
@@ -71,12 +71,12 @@ int main()
     //  compare results
     if( checkBandMatrixEqual(L_ref, L) == false ) {
         cout << "FAILED" << endl;
-        L_ref.printBandMatrix();
-        L.printBandMatrix();
+//        L_ref.printBandMatrix();
+//        L.printBandMatrix();
     } else if( checkBandMatrixEqual( D_ref, D ) == false ) {
         cout << "FAILED" << endl;
-        D_ref.printBandMatrix();
-        D.printBandMatrix();
+//        D_ref.printBandMatrix();
+//        D.printBandMatrix();
     } else {
         cout << "PASSED" << endl;
     }
