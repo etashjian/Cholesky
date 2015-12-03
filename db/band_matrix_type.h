@@ -7,6 +7,7 @@ typedef float data_t;
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <cstdio>
 
 struct BandMatrix {
 
@@ -14,19 +15,10 @@ struct BandMatrix {
      *  get the entry with given row (>=0) and col (>=0)
      *-----------------------------------------------------------------------------*/
     data_t              getEntry( const dim_t row, const dim_t col ) const; 
-    inline dim_t        getEntryIdx( const dim_t row, const dim_t col ) const {
-        assert( row-col <= _lowerBand && row-col >= -_upperBand );
-        const dim_t loc = col * (_upperBand+_lowerBand+1) + (row-col) + _upperBand;
-        if( loc < 0 || loc >= (dim_t)_vals.size() ) {
-            std::cout << _matDim << " " << _lowerBand << " " << _upperBand << " " << loc << " " << row << " " << col << std::endl;
-        }
-        assert( loc >= 0 && loc < (dim_t)_vals.size() );
-        return loc;
-    }
-    dim_t               getNumNonZeroEntries() const { 
-        return _matDim * (_upperBand+_lowerBand+1);
-    }
+    dim_t               getEntryIdx( const dim_t row, const dim_t col ) const;
+    dim_t               getNumNonZeroEntries() const;
     void                writeEntry( const dim_t row, const dim_t col, const data_t val );
+    void                printBandMatrix();
 
 //    private:
 

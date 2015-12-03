@@ -38,6 +38,8 @@ void cholesky_band_parallel_cuda(
 
     myCudaCheck( cudaMemcpy( hostD, devD, sizeof(data_t) * D.getNumNonZeroEntries(), cudaMemcpyDeviceToHost ) );
     myCudaCheck( cudaMemcpy( hostL, devL, sizeof(data_t) * L.getNumNonZeroEntries(), cudaMemcpyDeviceToHost ) );
+        
+    std::cout << "cholesky on band matrix finishes... [parallel version (cuda)]\n";
 }
 
 __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t * devL, const dim_t colIdx, const dim_t matDim, const dim_t bandWidth ) 
@@ -51,14 +53,17 @@ __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t
     data_t * prevL = &temp[bandWidth+1];//  L[col, (col-k):(col-1)]    
 
     if( threadIdx.x == 0 ) {
+        //  devD -> prevD, currD
         for( dim_t i = colIdx-1; (i >= colIdx-bandWidth) && i>=0; i-- ) {
             prevD[ i - (colIdx-bandWidth) ] = devD[i];
         }
+        currD[0] = devD[colIdx];
     } else {
+        //  devL -> prevL
         dim_t row = colIdx;
         dim_t col = colIdx-threadIdx.x;
         if( col >= 0 ) {
-            prevL[col - (colIdx-bandWidth)] = devL[col*(2*bandWidth+1) + (row-col) + bandWidth];
+            prevL[col - (colIdx-bandWidth)] = devL[col*(bandWidth+1) + (row-col)];
         }
     };
     __syncthreads();
@@ -72,9 +77,9 @@ __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t
         }
     } else {
         if( row < matDim ) {
-            currL = devL[col*(2*bandWidth+1) + (row-col) + bandWidth-1];
+            currL = devL[col*(bandWidth+1) + (row-col)];
             for( dim_t i = col-1; (i >= col-bandWidth+threadIdx.x) && i>=0; i-- ) {
-                currL -= prevD[i-(col-bandWidth)]*prevL[i-(col-bandWidth)]*devL[i*(2*bandWidth+1) + (row-i) + bandWidth];
+                currL -= prevD[i-(col-bandWidth)]*prevL[i-(col-bandWidth)]*devL[i*(bandWidth+1) + (row-i)];
             }
         }
     }
@@ -84,7 +89,7 @@ __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t
         devD[colIdx] = currD[0];
     } else {
         if( row < matDim ) {
-            devL[col*(2*bandWidth+1) + (row-col) + bandWidth] = currL / currD[0];
+            devL[col*(bandWidth+1) + (row-col)] = currL / currD[0];
         }
     }
 }

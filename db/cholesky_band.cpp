@@ -72,7 +72,7 @@ void cholesky_band_serial_index_handling(const BandMatrix& A, BandMatrix& L, Ban
       L.writeEntry(i,j,value);
     }
   }
-  std::cout << "cholesky on band matrix finishes... [serial version]\n";
+  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
