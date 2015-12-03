@@ -39,14 +39,13 @@ void cholesky_band_parallel_cuda(
     myCudaCheck( cudaMemcpy( hostD, devD, sizeof(data_t) * D.getNumNonZeroEntries(), cudaMemcpyDeviceToHost ) );
     myCudaCheck( cudaMemcpy( hostL, devL, sizeof(data_t) * L.getNumNonZeroEntries(), cudaMemcpyDeviceToHost ) );
         
+    cudaDeviceSynchronize();
+
     std::cout << "cholesky on band matrix finishes... [parallel version (cuda)]\n";
 }
 
 __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t * devL, const dim_t colIdx, const dim_t matDim, const dim_t bandWidth ) 
 {
-    if( colIdx + threadIdx.x >= matDim ) {
-        return;
-    }
     extern __shared__ data_t temp[];
     data_t * prevD = &temp[0];          //  D[(col-k):(col-1)]
     data_t * currD = &temp[bandWidth];  //  D[col]
@@ -68,6 +67,9 @@ __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t
     };
     __syncthreads();
 
+    if( colIdx + threadIdx.x >= matDim ) {
+        return;
+    }
     dim_t col = colIdx;
     dim_t row = colIdx + threadIdx.x;
     data_t currL = 0;

@@ -54,7 +54,7 @@ bool    checkBandMatrixEqual( BandMatrix & m1, BandMatrix & m2 ) {
     if( m1._matDim != m2._matDim || m1._lowerBand != m2._lowerBand || m1._upperBand != m2._upperBand || m1._vals.size() != m2._vals.size() )
         return false;
     for( dim_t i = 0; i < m1.getNumNonZeroEntries(); i++ ) {
-        if( std::fabs( m1._vals[i]-m2._vals[i] ) > std::fabs( m1._vals[i] ) * EPSILON )
+        if( std::fabs( m1._vals[i]-m2._vals[i] ) > EPSILON )
             return false;
     }
     return true;

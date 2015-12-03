@@ -9,14 +9,14 @@
 using namespace std;
 using namespace Eigen;
 
-int main()
+int main( int argc, char ** argv )
 {
     MyTimer _myTimer;
-    dim_t dim = 5000;
-    dim_t bandwidth = 4;
+    dim_t dim = atoi( argv[1] );
+    dim_t bandwidth = atoi( argv[2] );
 
     // generate random input matrix
-    cout << "Generating input... " << flush;
+    cout << "Generating input band matrix : dim=" << dim << " band=" << bandwidth << endl;
     _myTimer.startTimer();
     srand(time(NULL));
     BandMatrix A = createSymmetricPositiveDefiniteBandMatrix(dim, bandwidth);

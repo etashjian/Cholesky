@@ -5,4 +5,4 @@
 #SBATCH -N 1 -n 1 --gres=gpu:1
 #SBATCH -o test/grid_output.txt
 
-./bin/simple_band
+./bin/simple_band 2000 80

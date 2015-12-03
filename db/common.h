@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cmath>
-
 #include "db/band_matrix_type.h"
 
 #define EPSILON 0.01
