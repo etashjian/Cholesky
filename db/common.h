@@ -2,8 +2,11 @@
 #define _COMMON_H_
 
 #include <algorithm>
+#include <cmath>
 
 #include "db/band_matrix_type.h"
+
+#define EPSILON 0.01
 
 BandMatrix  createSymmetricPositiveDefiniteBandMatrix ( const dim_t matDim, const dim_t bandWidth );
 
@@ -11,6 +14,7 @@ BandMatrix  createSymmetricPositiveDefiniteBandMatrix ( const dim_t matDim, cons
 
 BandMatrix  createEmptyBandMatrix( const dim_t matDim, const dim_t lowerBand, const dim_t upperBand );
 
+bool    checkBandMatrixEqual( BandMatrix & m1, BandMatrix & m2 );
 
 /*-----------------------------------------------------------------------------
  *  Version 0 : Lazy Man

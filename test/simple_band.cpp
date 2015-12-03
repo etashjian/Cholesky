@@ -24,34 +24,31 @@ int main()
     std::cout << "Elapsed Time to Create Input SPDB Matrix : " << _myTimer.elapsedInSec() << " second\n";
 
     // Compute reference case
-    cout << "Computing Reference Case... " << flush;
-    MatrixXf A_ref = band_to_eigen(A);
-    MatrixXf L_ref = MatrixXf::Zero(dim, dim);
-    MatrixXf D_ref = MatrixXf::Zero(dim, dim);
-    cholesky_eigen_serial(A_ref, L_ref, D_ref);
-    cout << "done" << endl;
+//    cout << "Computing Reference Case... " << flush;
+//    MatrixXf A_ref = band_to_eigen(A);
+//    MatrixXf L_ref = MatrixXf::Zero(dim, dim);
+//    MatrixXf D_ref = MatrixXf::Zero(dim, dim);
+//    cholesky_eigen_serial(A_ref, L_ref, D_ref);
+//    cout << "done" << endl;
 
     // allocate L and D and compute decomp
-    cout << "Computing serial decomposition... " << endl;
+//    cout << "Computing serial decomposition... " << endl;
+    BandMatrix L_ref = createEmptyBandMatrix(dim, bandwidth, 0);
+    BandMatrix D_ref = createEmptyBandMatrix(dim, 0, 0);
     BandMatrix L = createEmptyBandMatrix(dim, bandwidth, 0);
     BandMatrix D = createEmptyBandMatrix(dim, 0, 0);
 
-    unsigned diff = 0;
-
-    //  TEST!!!
+    //  TEST!!! (REFERENCE)
     _myTimer.startTimer();
-    cholesky_band_serial(A, L, D);
+    cholesky_band_serial(A, L_ref, D_ref);
     _myTimer.stopTimer();
     printf( "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : %f seconds\n", 
             _myTimer.elapsedInSec() );
     // compare results
-    diff = cmp_matrices(L_ref, L);
-    diff += cmp_matrices(D_ref, D);
-    if(diff) cout << "FAILED" << endl;
-    else cout << "PASSED" << endl;
-//    A.printBandMatrix();
-//    L.printBandMatrix();
-//    D.printBandMatrix();
+//    diff = cmp_matrices(L_ref, L);
+//    diff += cmp_matrices(D_ref, D);
+//    if(diff) cout << "FAILED" << endl;
+//    else cout << "PASSED" << endl;
     
     //  TEST!!!
     _myTimer.startTimer();
@@ -60,12 +57,10 @@ int main()
     printf( "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : %f seconds\n", 
             _myTimer.elapsedInSec() );
     // compare results
-    diff = cmp_matrices(L_ref, L);
-    diff += cmp_matrices(D_ref, D);
-    if(diff) cout << "FAILED" << endl;
-    else cout << "PASSED" << endl;
-    L.printBandMatrix();
-    D.printBandMatrix();
+//    diff = cmp_matrices(L_ref, L);
+//    diff += cmp_matrices(D_ref, D);
+    if(checkBandMatrixEqual( L_ref, L ) && checkBandMatrixEqual( D_ref, D ) ) cout << "PASSED" << endl;
+    else cout << "FAILED" << endl;
     
     //  TEST!!!
     _myTimer.startTimer();
@@ -74,11 +69,17 @@ int main()
     printf( "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : %f seconds\n", 
             _myTimer.elapsedInSec() );
     //  compare results
-    diff = cmp_matrices(L_ref, L);
-    diff += cmp_matrices(D_ref, D);
-    if(diff) cout << "FAILED" << endl;
-    else cout << "PASSED" << endl;
-    L.printBandMatrix();
-    D.printBandMatrix();
+    if( checkBandMatrixEqual(L_ref, L) == false ) {
+        cout << "FAILED" << endl;
+        L_ref.printBandMatrix();
+        L.printBandMatrix();
+    } else if( checkBandMatrixEqual( D_ref, D ) == false ) {
+        cout << "FAILED" << endl;
+        D_ref.printBandMatrix();
+        D.printBandMatrix();
+    } else {
+        cout << "PASSED" << endl;
+    }
 
+    return 0;
 }

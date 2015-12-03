@@ -34,7 +34,7 @@ void    BandMatrix::writeEntry( const dim_t row, const dim_t col, const data_t v
 }
 
 void    BandMatrix::printBandMatrix() {
-    printf( "Printing Matrix : %d x %d\n", _matDim, _matDim );
+    printf( "Printing Matrix : %d %d %d\n", _matDim, _lowerBand, _upperBand );
     for( dim_t row = 0; row < _matDim; row++ ) {
         for( dim_t col = 0; col < _matDim; col++ ) {
             printf( "%10.1e", getEntry( row, col ) );
