@@ -36,6 +36,10 @@ void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D); /*
 
 void cholesky_band_serial_index_handling( const BandMatrix & A, BandMatrix & L, BandMatrix & D ); /* cholesky_band.cpp */
 
+void cholesky_band_serial_index_handling_omp_v1(const BandMatrix& A, BandMatrix& L, BandMatrix& D); /* cholesky_band.cpp */
+
+void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix& L, BandMatrix& D); /* choesky_band.cpp */
+
 void cholesky_band_parallel_omp( const BandMatrix & A, BandMatrix & L, BandMatrix & D );
 
 void cholesky_band_parallel_cuda( const BandMatrix & A, BandMatrix & L, BandMatrix & D ); /* cholesky_band_cuda.cu */
