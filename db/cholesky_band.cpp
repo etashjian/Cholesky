@@ -96,7 +96,7 @@ void cholesky_band_serial_index_handling_omp_v1(const BandMatrix& A, BandMatrix&
 
     // compute L values
     L.writeEntry(j, j, 1);
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic)
     for(dim_t i = j + 1; i < A._matDim; ++i)
     {
       data_t value = A.getEntry(i,j);
@@ -134,7 +134,7 @@ void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix&
 
     // compute L values
     L.writeEntry(j, j, 1);
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic)
     for(dim_t i = j + 1; i < A._matDim; ++i)
     {
       data_t value = A.getEntry(i,j);

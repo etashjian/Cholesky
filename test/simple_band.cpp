@@ -83,5 +83,33 @@ int main( int argc, char ** argv )
         cout << "PASSED" << endl;
     }
 
+    //  TEST!!!
+    L = createEmptyBandMatrix(dim, bandwidth, 0);
+    D = createEmptyBandMatrix(dim, 0, 0);
+    _myTimer.startTimer();
+    cholesky_band_serial_index_handling_omp_v1(A, L, D);
+    _myTimer.stopTimer();
+    printf( "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : %f seconds\n",
+            _myTimer.elapsedInSec() );
+    // compare results
+//    diff = cmp_matrices(L_ref, L);
+//    diff += cmp_matrices(D_ref, D);
+    if(checkBandMatrixEqual( L_ref, L ) && checkBandMatrixEqual( D_ref, D ) ) cout << "PASSED" << endl;
+    else cout << "FAILED" << endl;
+
+    //  TEST!!!
+    L = createEmptyBandMatrix(dim, bandwidth, 0);
+    D = createEmptyBandMatrix(dim, 0, 0);
+    _myTimer.startTimer();
+    cholesky_band_serial_index_handling_omp_v2(A, L, D);
+    _myTimer.stopTimer();
+    printf( "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : %f seconds\n",
+            _myTimer.elapsedInSec() );
+    // compare results
+//    diff = cmp_matrices(L_ref, L);
+//    diff += cmp_matrices(D_ref, D);
+    if(checkBandMatrixEqual( L_ref, L ) && checkBandMatrixEqual( D_ref, D ) ) cout << "PASSED" << endl;
+    else cout << "FAILED" << endl;
+
     return 0;
 }
