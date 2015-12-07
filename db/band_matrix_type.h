@@ -3,6 +3,7 @@
 
 typedef int dim_t;
 typedef float data_t;
+//typedef double data_t;
 
 #include <vector>
 #include <cassert>
