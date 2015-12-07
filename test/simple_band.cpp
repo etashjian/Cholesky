@@ -101,7 +101,7 @@ int main( int argc, char ** argv )
     L = createEmptyBandMatrix(dim, bandwidth, 0);
     D = createEmptyBandMatrix(dim, 0, 0);
     _myTimer.startTimer();
-    cholesky_band_serial_index_handling_omp_v3(A, L, D);
+    cholesky_band_serial_index_handling_omp_v2(A, L, D);
     _myTimer.stopTimer();
     printf( "Elapsed Time to Perform Cholesky Decomposition on Input SPDB Matrix : %f seconds\n",
             _myTimer.elapsedInSec() );
