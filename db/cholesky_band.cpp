@@ -7,6 +7,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
+#include <queue>
+
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////
+typedef struct Pos_t
+{
+  dim_t _i;
+  dim_t _j;
+
+  Pos_t(dim_t i, dim_t j) : _i(i), _j(j) {}
+} Pos;
+
+typedef queue<Pos> PosQueue;
 
 ////////////////////////////////////////////////////////////////////////////////
 void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
@@ -132,6 +146,8 @@ void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix&
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
 
+  omp_set_nested(1);
+
   // calculate decomposition
   for(dim_t j = 0; j < A._matDim; ++j)
   {
@@ -174,69 +190,154 @@ void compute_L_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t i,
 void compute_D_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t j);
 
 
-void compute_L_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t i, dim_t j)
+inline void compute_L_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t i, dim_t j)
 {
 
-  if(i > j + A._lowerBand || L.getEntry(i,j) != 0) return;
+  if(i > j + A->_lowerBand) return;
 
-//  std::cout << "Computing L entry " << i << "," << j << std::endl;
+//  printf("Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
 
   if(i == j) {
-    L.writeEntry(i, j, 1);
+    L->writeEntry(i, j, 1);
   }
   else
   {
-    data_t value = A.getEntry(i,j);
-    for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
+    data_t value = A->getEntry(i,j);
+    for(dim_t k = std::max( 0, j-A->_lowerBand ); k < j; ++k)
     {
-      #pragma omp task shared(A, L, D, i, k)
-      compute_L_entry(A, L, D, i, k);
-      #pragma omp task shared(A, L, D, i, k)
-      compute_L_entry(A, L, D, j, k);
-      #pragma omp task shared(A, L, D, i, k)
-      compute_D_entry(A, L, D, k);
-      #pragma omp taskwait
-      value -= L.getEntry(i,k) * L.getEntry(j,k) * D.getEntry(k,k);
+      value -= L->getEntry(i,k) * L->getEntry(j,k) * D->getEntry(k,k);
     }
-    value /= D.getEntry(j,j);
-    L.writeEntry(i,j,value);
+    value /= D->getEntry(j,j);
+    L->writeEntry(i,j,value);
   }
 
-//  std::cout << "Done Computing L entry " << i << "," << j << std::endl;
+//  printf("Done Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
 }
 
-void compute_D_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t j)
+inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t j)
 {
-  if(D.getEntry(j,j) != 0) return;
+//  printf("Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
 
-//  std::cout << "Computing D entry " << j << "," << j << std::endl;
-
-  data_t value = A.getEntry(j,j);
-  for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
+  data_t value = A->getEntry(j,j);
+  for(dim_t k = std::max( 0, j-A->_lowerBand ); k < j; ++k)
   {
-    compute_D_entry(A, L, D, k);
-    compute_L_entry(A, L, D, j, k);
-    value -= D.getEntry(k,k) * L.getEntry(j,k) * L.getEntry(j,k);
+    value -= D->getEntry(k,k) * L->getEntry(j,k) * L->getEntry(j,k);
   }
-  D.writeEntry(j,j,value);
+  D->writeEntry(j,j,value);
 
-//  std::cout << "Done Computing D entry " << j << "," << j << std::endl;
+//  printf("Done Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
+}
+
+void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, PosQueue *L_q, unsigned *D_dq, unsigned *L_dq, bool *done)
+{
+  Pos pos(0,0);
+  bool valid_L = false, valid_D = false;
+
+//  printf("Thread %d starting\n", omp_get_thread_num());
+
+  while(!*done)
+  {
+    #pragma omp critical
+    {
+      if(!D_q->empty())
+      {
+        pos = D_q->front();
+        D_q->pop();
+        valid_D = true;
+      }
+    }
+
+    if(!valid_D)
+    {
+      #pragma omp critical
+      {
+        if(!L_q->empty())
+        {
+          pos = L_q->front();
+          L_q->pop();
+          valid_L = true;
+        }
+      }
+    }
+
+    if(valid_D)
+    {
+      compute_D_entry(A, L, D, pos._j);
+      #pragma omp critical
+      (*D_dq)++;
+    }
+    else if(valid_L)
+    {
+      compute_L_entry(A, L, D, pos._i, pos._j);
+      #pragma omp critical
+      (*L_dq)++;
+    }
+
+    valid_L = false;
+    valid_D = false;
+  }
+
+//  printf("Thread %d done!\n", omp_get_thread_num());
 }
 
 void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
 
-  for(dim_t i = 0; i < A._matDim; ++i)
-    L.writeEntry(i,i,1);
-
-  // calculate decomposition
-  dim_t j = A._matDim - 1;
-  compute_D_entry(A, L, D, j);
-  for(dim_t i = j-1; i < A._matDim; ++i)
+  #pragma omp parallel
   {
-    compute_L_entry(A, L, D, i, j);
+    #pragma omp single
+    {
+      int num_threads = omp_get_num_threads();
+
+      // create task queues
+      bool done = false;
+      PosQueue D_q, L_q;
+
+      unsigned L_dq = 0, D_dq = 0;
+
+      // launch consumer tasks
+      for(dim_t i = 0; i < num_threads - 1; ++i)
+      {
+        #pragma omp task shared(A, L, D, D_q, L_q, D_dq, L_dq, done)
+        consumer(&A, &L, &D, &D_q, &L_q, &D_dq, &L_dq, &done);
+      }
+
+      unsigned D_count = 0, L_count = 0;
+      for(dim_t j = 0; j < A._matDim; ++j)
+      {
+        // compute D values
+        #pragma omp critical
+        D_q.push(Pos(j,j)); D_count++;
+
+        bool D_wait = true;
+        while(D_wait)
+        {
+          #pragma omp critical
+          D_wait = D_dq != D_count;
+        }
+
+        // compute L values
+        L.writeEntry(j, j, 1);
+        for(dim_t i = j + 1; i < A._matDim; ++i)
+        {
+          #pragma omp critical
+          L_q.push(Pos(i,j)); L_count++;
+        }
+
+        bool L_wait = true;
+        while(L_wait)
+        {
+          #pragma omp critical
+          L_wait = L_dq != L_count;
+        }
+      }
+
+      done = true;
+      #pragma omp taskwait
+    }
   }
+
 #ifdef ENABLE_LOG
   std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
 #endif
