@@ -16,8 +16,9 @@ typedef struct Pos_t
 {
   dim_t _i;
   dim_t _j;
+  dim_t _stride;
 
-  Pos_t(dim_t i, dim_t j) : _i(i), _j(j) {}
+  Pos_t(dim_t i, dim_t j, dim_t stride) : _i(i), _j(j), _stride(stride) {}
 } Pos;
 
 typedef queue<Pos> PosQueue;
@@ -195,7 +196,7 @@ inline void compute_L_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, d
 
   if(i > j + A->_lowerBand) return;
 
-//  printf("Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
+  //printf("Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
 
   if(i == j) {
     L->writeEntry(i, j, 1);
@@ -211,12 +212,12 @@ inline void compute_L_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, d
     L->writeEntry(i,j,value);
   }
 
-//  printf("Done Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
+  //printf("Done Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
 }
 
 inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t j)
 {
-//  printf("Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
+  //printf("Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
 
   data_t value = A->getEntry(j,j);
   for(dim_t k = std::max( 0, j-A->_lowerBand ); k < j; ++k)
@@ -225,12 +226,12 @@ inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, d
   }
   D->writeEntry(j,j,value);
 
-//  printf("Done Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
+  //printf("Done Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
 }
 
 void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, PosQueue *L_q, unsigned *D_dq, unsigned *L_dq, bool *done)
 {
-  Pos pos(0,0);
+  Pos pos(0,0,0);
   bool valid_L = false, valid_D = false;
 
 //  printf("Thread %d starting\n", omp_get_thread_num());
@@ -268,9 +269,12 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
     }
     else if(valid_L)
     {
-      compute_L_entry(A, L, D, pos._i, pos._j);
+      for(dim_t i = pos._i; i < pos._i + pos._stride; ++i)
+        if(i < A->_matDim)
+          compute_L_entry(A, L, D, i, pos._j);
+
       #pragma omp critical
-      (*L_dq)++;
+      (*L_dq) += pos._stride;
     }
 
     valid_L = false;
@@ -293,6 +297,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
       // create task queues
       bool done = false;
       PosQueue D_q, L_q;
+      dim_t stride = 8;
 
       unsigned L_dq = 0, D_dq = 0;
 
@@ -308,7 +313,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
       {
         // compute D values
         #pragma omp critical
-        D_q.push(Pos(j,j)); D_count++;
+        D_q.push(Pos(j,j, 1)); D_count++;
 
         bool D_wait = true;
         while(D_wait)
@@ -319,10 +324,10 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
 
         // compute L values
         L.writeEntry(j, j, 1);
-        for(dim_t i = j + 1; i < A._matDim; ++i)
+        for(dim_t i = j + 1; i < A._matDim; i+= stride)
         {
           #pragma omp critical
-          L_q.push(Pos(i,j)); L_count++;
+          L_q.push(Pos(i,j,stride)); L_count+=stride;
         }
 
         bool L_wait = true;
