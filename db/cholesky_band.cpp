@@ -297,7 +297,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
       // create task queues
       bool done = false;
       PosQueue D_q, L_q;
-      dim_t stride = 8;
+      dim_t stride = 32;
 
       unsigned L_dq = 0, D_dq = 0;
 
@@ -319,7 +319,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         while(D_wait)
         {
           #pragma omp critical
-          D_wait = D_dq != D_count;
+          D_wait = D_dq < D_count;
         }
 
         // compute L values
@@ -334,7 +334,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         while(L_wait)
         {
           #pragma omp critical
-          L_wait = L_dq != L_count;
+          L_wait = L_dq < L_count;
         }
       }
 
