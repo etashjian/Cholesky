@@ -150,30 +150,39 @@ void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix&
   omp_set_nested(1);
 
   // calculate decomposition
-  for(dim_t j = 0; j < A._matDim; ++j)
+  #pragma omp parallel
   {
-    // compute D values
-    data_t d_value = A.getEntry(j,j);
-    for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
+    for(dim_t j = 0; j < A._matDim; ++j)
     {
-      d_value -= D.getEntry(k,k) * L.getEntry(j,k) * L.getEntry(j,k);
-    }
+      // compute D values
+      #pragma omp single
+      {
+        data_t d_value = A.getEntry(j,j);
+        for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
+        {
+          d_value -= D.getEntry(k,k) * L.getEntry(j,k) * L.getEntry(j,k);
+        }
 
-    D.writeEntry(j,j,d_value);
+        D.writeEntry(j,j,d_value);
+      }
 
-    // compute L values
-    L.writeEntry(j, j, 1);
-    #pragma omp parallel for schedule(dynamic)
-    for(dim_t i = j + 1; i < A._matDim; ++i)
-    {
+      #pragma omp barrier
+
+      // compute L values
+      L.writeEntry(j, j, 1);
+      #pragma omp for schedule(dynamic)
+      for(dim_t i = j + 1; i < A._matDim; ++i)
+      {
         data_t l_value = A.getEntry(i,j);
-        #pragma omp parallel for reduction(+:l_value)
         for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
         {
           l_value -= L.getEntry(i,k) * L.getEntry(j,k) * D.getEntry(k,k);
         }
         l_value /= D.getEntry(j,j);
         L.writeEntry(i,j,l_value);
+      }
+
+      #pragma omp barrier
     }
   }
 
