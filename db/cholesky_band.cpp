@@ -306,7 +306,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
       // create task queues
       bool done = false;
       PosQueue D_q, L_q;
-      dim_t stride = 32;
+      dim_t stride = min(32, A._lowerBand / (num_threads - 1));
 
       unsigned L_dq = 0, D_dq = 0;
 

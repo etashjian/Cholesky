@@ -41,7 +41,9 @@ void cholesky_band_parallel_cuda(
         
     cudaDeviceSynchronize();
 
+#ifdef ENABLE_LOG
     std::cout << "cholesky on band matrix finishes... [parallel version (cuda)]\n";
+#endif
 }
 
 __global__ void choleskyColumnSolverKernel( data_t * devA, data_t * devD, data_t * devL, const dim_t colIdx, const dim_t matDim, const dim_t bandWidth ) 
