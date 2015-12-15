@@ -324,6 +324,13 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         #pragma omp critical
         D_q.push(Pos(j,j, 1)); D_count++;
 
+        bool L_wait = true;
+        while(L_wait)
+        {
+          #pragma omp critical
+          L_wait = L_dq < L_count;
+        }
+
         bool D_wait = true;
         while(D_wait)
         {
@@ -333,17 +340,19 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
 
         // compute L values
         L.writeEntry(j, j, 1);
-        for(dim_t i = j + 1; i < A._matDim; i+= stride)
-        {
-          #pragma omp critical
-          L_q.push(Pos(i,j,stride)); L_count+=stride;
-        }
+        L_q.push(Pos(j+1,j, 1)); L_count += 1;
 
-        bool L_wait = true;
+        L_wait = true;
         while(L_wait)
         {
           #pragma omp critical
           L_wait = L_dq < L_count;
+        }
+
+        for(dim_t i = j + 2; i < A._matDim; i+= stride)
+        {
+          #pragma omp critical
+          L_q.push(Pos(i,j,stride)); L_count+=stride;
         }
       }
 
