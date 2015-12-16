@@ -60,147 +60,11 @@ void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-void cholesky_band_serial_index_handling(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
-{
-  assert(A._matDim == L._matDim && L._matDim == D._matDim);
-
-  // calculate decomposition
-  for(dim_t j = 0; j < A._matDim; ++j)
-  {
-    // compute D values
-    data_t value = A.getEntry(j,j);
-//    for(dim_t k = 0; k < j; ++k)              /* CHANGED */
-    for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
-    {
-      value -= D.getEntry(k,k) * L.getEntry(j,k) * L.getEntry(j,k);
-    }
-    D.writeEntry(j,j,value);
-
-    // compute L values
-    L.writeEntry(j, j, 1);
-    for(dim_t i = j + 1; i < A._matDim; ++i)
-    {
-      data_t value = A.getEntry(i,j);
-//      for(dim_t k = 0; k < j; ++k)            /* CHANGED */
-      for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
-      {
-        value -= L.getEntry(i,k) * L.getEntry(j,k) * D.getEntry(k,k);
-      }
-      value /= D.getEntry(j,j);
-      L.writeEntry(i,j,value);
-    }
-  }
-
-#ifdef ENABLE_LOG
-  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
-#endif
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-void cholesky_band_serial_index_handling_omp_v1(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
-{
-  assert(A._matDim == L._matDim && L._matDim == D._matDim);
-
-  // calculate decomposition
-  for(dim_t j = 0; j < A._matDim; ++j)
-  {
-    // compute D values
-    data_t value = A.getEntry(j,j);
-    for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
-    {
-      value -= D.getEntry(k,k) * L.getEntry(j,k) * L.getEntry(j,k);
-    }
-    D.writeEntry(j,j,value);
-
-    // compute L values
-    L.writeEntry(j, j, 1);
-    #pragma omp parallel for schedule(dynamic)
-    for(dim_t i = j + 1; i < A._matDim; ++i)
-    {
-      data_t value = A.getEntry(i,j);
-      for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
-      {
-        value -= L.getEntry(i,k) * L.getEntry(j,k) * D.getEntry(k,k);
-      }
-      value /= D.getEntry(j,j);
-      L.writeEntry(i,j,value);
-    }
-  }
-
-#ifdef ENABLE_LOG
-  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
-#endif
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
-{
-  assert(A._matDim == L._matDim && L._matDim == D._matDim);
-
-  omp_set_nested(1);
-
-  // calculate decomposition
-  #pragma omp parallel
-  {
-    for(dim_t j = 0; j < A._matDim; ++j)
-    {
-      // compute D values
-      #pragma omp single
-      {
-        data_t d_value = A.getEntry(j,j);
-        for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
-        {
-          d_value -= D.getEntry(k,k) * L.getEntry(j,k) * L.getEntry(j,k);
-        }
-
-        D.writeEntry(j,j,d_value);
-      }
-
-      #pragma omp barrier
-
-      // compute L values
-      L.writeEntry(j, j, 1);
-      #pragma omp for schedule(dynamic)
-      for(dim_t i = j + 1; i < A._matDim; ++i)
-      {
-        data_t l_value = A.getEntry(i,j);
-        for(dim_t k = std::max( 0, j-A._lowerBand ); k < j; ++k)
-        {
-          l_value -= L.getEntry(i,k) * L.getEntry(j,k) * D.getEntry(k,k);
-        }
-        l_value /= D.getEntry(j,j);
-        L.writeEntry(i,j,l_value);
-      }
-
-      #pragma omp barrier
-    }
-  }
-
-#ifdef ENABLE_LOG
-  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
-#endif
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-
 void compute_L_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t i, dim_t j);
 void compute_D_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t j);
 
 
-inline void compute_L_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t i, dim_t j)
+static inline void compute_L_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t i, dim_t j)
 {
 
   if(i > j + A->_lowerBand) return;
@@ -224,7 +88,7 @@ inline void compute_L_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, d
   //printf("Done Computing L entry %d,%d on thread %d\n", i, j, omp_get_thread_num());
 }
 
-inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t j)
+static inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, dim_t j)
 {
   //printf("Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
 
@@ -238,12 +102,108 @@ inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatrix *D, d
   //printf("Done Computing D entry %d,%d on thread %d\n", j, j, omp_get_thread_num());
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void cholesky_band_serial_index_handling(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
+{
+  assert(A._matDim == L._matDim && L._matDim == D._matDim);
+
+  // calculate decomposition
+  for(dim_t j = 0; j < A._matDim; ++j)
+  {
+    // compute D values
+    compute_D_entry(&A, &L, &D, j);
+
+    // compute L values
+    L.writeEntry(j, j, 1);
+    for(dim_t i = j + 1; i < A._matDim; ++i)
+    {
+      compute_L_entry(&A, &L, &D, i, j);
+    }
+  }
+
+#ifdef ENABLE_LOG
+  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
+#endif
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+void cholesky_band_serial_index_handling_omp_v1(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
+{
+  assert(A._matDim == L._matDim && L._matDim == D._matDim);
+
+  // calculate decomposition
+  for(dim_t j = 0; j < A._matDim; ++j)
+  {
+    // compute D values
+    compute_D_entry(&A, &L, &D, j);
+
+    // compute L values
+    L.writeEntry(j, j, 1);
+    #pragma omp parallel for schedule(dynamic)
+    for(dim_t i = j + 1; i <= j + A._lowerBand; ++i)
+    {
+      compute_L_entry(&A, &L, &D, i, j);
+    }
+  }
+
+#ifdef ENABLE_LOG
+  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
+#endif
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
+{
+  assert(A._matDim == L._matDim && L._matDim == D._matDim);
+
+  omp_set_nested(1);
+
+  // calculate decomposition
+  #pragma omp parallel
+  {
+    for(dim_t j = 0; j < A._matDim; ++j)
+    {
+      #pragma omp single
+      {
+        // compute D values
+        compute_D_entry(&A, &L, &D, j);
+      }
+      #pragma omp barrier
+
+      // compute L values
+      L.writeEntry(j, j, 1);
+      #pragma omp for schedule(dynamic)
+      for(dim_t i = j + 1; i <= j + A._lowerBand; ++i)
+      {
+        compute_L_entry(&A, &L, &D, i, j);
+      }
+
+      #pragma omp barrier
+    }
+  }
+
+#ifdef ENABLE_LOG
+  std::cout << "cholesky on band matrix finishes... [serial version (index handling)]\n";
+#endif
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+
 void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, PosQueue *L_q, unsigned *D_dq, unsigned *L_dq, bool *done)
 {
   Pos pos(0,0,0);
   bool valid_L = false, valid_D = false;
 
-//  printf("Thread %d starting\n", omp_get_thread_num());
+  //printf("Thread %d starting\n", omp_get_thread_num());
 
   while(!*done)
   {
@@ -290,7 +250,7 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
     valid_D = false;
   }
 
-//  printf("Thread %d done!\n", omp_get_thread_num());
+  //printf("Thread %d done!\n", omp_get_thread_num());
 }
 
 void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
@@ -306,7 +266,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
       // create task queues
       bool done = false;
       PosQueue D_q, L_q;
-      dim_t stride = min(32, A._lowerBand / (num_threads - 1));
+      dim_t stride = 32;
 
       unsigned L_dq = 0, D_dq = 0;
 
@@ -324,13 +284,6 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         #pragma omp critical
         D_q.push(Pos(j,j, 1)); D_count++;
 
-        bool L_wait = true;
-        while(L_wait)
-        {
-          #pragma omp critical
-          L_wait = L_dq < L_count;
-        }
-
         bool D_wait = true;
         while(D_wait)
         {
@@ -340,19 +293,17 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
 
         // compute L values
         L.writeEntry(j, j, 1);
-        L_q.push(Pos(j+1,j, 1)); L_count += 1;
+        for(dim_t i = j + 1; i <= j + A._lowerBand; i += stride)
+        {
+          #pragma omp critical
+          L_q.push(Pos(i,j,stride)); L_count+=stride;
+        }
 
-        L_wait = true;
+        bool L_wait = true;
         while(L_wait)
         {
           #pragma omp critical
           L_wait = L_dq < L_count;
-        }
-
-        for(dim_t i = j + 2; i < A._matDim; i+= stride)
-        {
-          #pragma omp critical
-          L_q.push(Pos(i,j,stride)); L_count+=stride;
         }
       }
 

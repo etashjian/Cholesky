@@ -12,7 +12,7 @@ using namespace Eigen;
 int main( int argc, char ** argv )
 {
   MyTimer timer;
-  dim_t bandwidth = 128;
+  dim_t bandwidth = 256;
 
   // print header
   cout << "matrix dimension, matrix bandwidth, runtime serial, runtime omp for,"
@@ -49,7 +49,7 @@ int main( int argc, char ** argv )
     l = createEmptyBandMatrix(dim, bandwidth, 0);
     d = createEmptyBandMatrix(dim, 0, 0);
     timer.startTimer();
-    cholesky_band_serial_index_handling_omp_v2(a, l, d);
+    cholesky_band_serial_index_handling_omp_v3(a, l, d);
     timer.stopTimer();
     cout << timer.elapsedInSec();
     if(!checkBandMatrixEqual( l_ref, l ) || !checkBandMatrixEqual( d_ref, d ))

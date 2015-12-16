@@ -19,7 +19,7 @@ int main( int argc, char ** argv )
        <<  "runtime omp task,runtime cuda,\n";
 
   // get results for varying matrix dimension
-  for(dim_t bandwidth = 1; bandwidth < 2 << 8; bandwidth <<= 1)
+  for(dim_t bandwidth = 1; bandwidth < 1 << 10; bandwidth <<= 1)
   {
     cout << dim << "," << bandwidth << ",";
 
@@ -49,7 +49,7 @@ int main( int argc, char ** argv )
     l = createEmptyBandMatrix(dim, bandwidth, 0);
     d = createEmptyBandMatrix(dim, 0, 0);
     timer.startTimer();
-    cholesky_band_serial_index_handling_omp_v2(a, l, d);
+    cholesky_band_serial_index_handling_omp_v3(a, l, d);
     timer.stopTimer();
     cout << timer.elapsedInSec();
     if(!checkBandMatrixEqual( l_ref, l ) || !checkBandMatrixEqual( d_ref, d ))
