@@ -198,7 +198,7 @@ void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix&
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, PosQueue *L_q, unsigned *D_dq, unsigned *L_dq, bool *done)
+void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, PosQueue *L_q, unsigned *D_dq, unsigned *L_dq, unsigned *D_sched, bool *done)
 {
   Pos pos(0,0,0);
   bool valid_L = false, valid_D = false;
@@ -244,6 +244,11 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
 
       #pragma omp critical
       (*L_dq) += pos._stride;
+
+      if(pos._i == pos._j + 1) {
+        #pragma omp critical
+        (*D_sched) += 1;
+      }
     }
 
     valid_L = false;
@@ -268,13 +273,13 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
       PosQueue D_q, L_q;
       dim_t stride = 32;
 
-      unsigned L_dq = 0, D_dq = 0;
+      unsigned L_dq = 0, D_dq = 0, D_sched = 0;
 
       // launch consumer tasks
       for(dim_t i = 0; i < num_threads - 1; ++i)
       {
-        #pragma omp task shared(A, L, D, D_q, L_q, D_dq, L_dq, done)
-        consumer(&A, &L, &D, &D_q, &L_q, &D_dq, &L_dq, &done);
+        #pragma omp task shared(A, L, D, D_q, L_q, D_dq, D_sched, L_dq, done)
+        consumer(&A, &L, &D, &D_q, &L_q, &D_dq, &L_dq, &D_sched, &done);
       }
 
       unsigned D_count = 0, L_count = 0;
@@ -283,6 +288,13 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         // compute D values
         #pragma omp critical
         D_q.push(Pos(j,j, 1)); D_count++;
+
+        bool L_wait = true;
+        while(L_wait)
+        {
+          #pragma omp critical
+          L_wait = L_dq < L_count;
+        }
 
         bool D_wait = true;
         while(D_wait)
@@ -299,11 +311,11 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
           L_q.push(Pos(i,j,stride)); L_count+=stride;
         }
 
-        bool L_wait = true;
-        while(L_wait)
+        bool D_ready = false;
+        while(!D_ready)
         {
           #pragma omp critical
-          L_wait = L_dq < L_count;
+          D_ready = D_sched == D_count;
         }
       }
 
