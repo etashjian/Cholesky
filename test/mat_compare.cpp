@@ -17,7 +17,7 @@ int main( int argc, char ** argv )
   cout << "matrix dimension, matrix bandwidth, runtime serial, runtime omp for,"
        <<  "runtime omp task,runtime cuda,\n";
 
-  // get results for varying matrix dimension
+  // get results for varying matrix dimension and bandwidth
   for(dim_t dim = 1 << 8; dim < 1 << 16; dim <<= 1)
   {
     for(dim_t bandwidth = 1; bandwidth < min(dim, 1 << 10); bandwidth <<= 1)

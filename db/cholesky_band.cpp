@@ -12,18 +12,24 @@
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * Struct for passing calculation requests to tasks
+ */
 typedef struct Pos_t
 {
-  dim_t _i;
-  dim_t _j;
-  dim_t _stride;
+  dim_t _i; // starting i position
+  dim_t _j; // starting j position
+  dim_t _stride; // number of entries to calculate
 
   Pos_t(dim_t i, dim_t j, dim_t stride) : _i(i), _j(j), _stride(stride) {}
 } Pos;
 
-typedef queue<Pos> PosQueue;
+typedef queue<Pos> PosQueue; // Queues for communicating between threads
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * Basic serial algorithm. Compute all entries of L.
+ */
 void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
@@ -60,6 +66,9 @@ void cholesky_band_serial(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * Functions for computing L and D matrix entiries
+ */
 void compute_L_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t i, dim_t j);
 void compute_D_entry(const BandMatrix& A, BandMatrix& L, BandMatrix& D, dim_t j);
 
@@ -103,6 +112,9 @@ static inline void compute_D_entry(const BandMatrix *A, BandMatrix *L, BandMatri
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * Serial algorithm, optimized indexing for band matrices
+ */
 void cholesky_band_serial_index_handling(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
@@ -130,6 +142,9 @@ void cholesky_band_serial_index_handling(const BandMatrix& A, BandMatrix& L, Ban
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * First try at openmp. just throw in a for pragma
+ */
 void cholesky_band_serial_index_handling_omp_v1(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
@@ -158,6 +173,9 @@ void cholesky_band_serial_index_handling_omp_v1(const BandMatrix& A, BandMatrix&
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * Second attemp, a more sophisticated version using for pragma
+ */
 void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
@@ -198,6 +216,9 @@ void cholesky_band_serial_index_handling_omp_v2(const BandMatrix& A, BandMatrix&
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Function for tasks computing L and D values
+ */
 void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, PosQueue *L_q, unsigned *D_dq, unsigned *L_dq, unsigned *D_sched, bool *done)
 {
   Pos pos(0,0,0);
@@ -207,6 +228,7 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
 
   while(!*done)
   {
+    // check for D requests
     #pragma omp critical
     {
       if(!D_q->empty())
@@ -217,6 +239,7 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
       }
     }
 
+    // otherwise check for L requests
     if(!valid_D)
     {
       #pragma omp critical
@@ -230,12 +253,14 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
       }
     }
 
+    // compute D values
     if(valid_D)
     {
       compute_D_entry(A, L, D, pos._j);
       #pragma omp critical
       (*D_dq)++;
     }
+    // compute L values
     else if(valid_L)
     {
       for(dim_t i = pos._i; i < pos._i + pos._stride; ++i)
@@ -258,6 +283,9 @@ void consumer(const BandMatrix *A, BandMatrix *L, BandMatrix *D, PosQueue *D_q, 
   //printf("Thread %d done!\n", omp_get_thread_num());
 }
 
+/**
+ * Third attempt, producer/consumer model scheduling
+ */
 void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix& L, BandMatrix& D)
 {
   assert(A._matDim == L._matDim && L._matDim == D._matDim);
@@ -289,6 +317,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         #pragma omp critical
         D_q.push(Pos(j,j, 1)); D_count++;
 
+        // wait for L values of previous column to be ready
         bool L_wait = true;
         while(L_wait)
         {
@@ -296,6 +325,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
           L_wait = L_dq < L_count;
         }
 
+        // wait for D value to be ready
         bool D_wait = true;
         while(D_wait)
         {
@@ -311,6 +341,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
           L_q.push(Pos(i,j,stride)); L_count+=stride;
         }
 
+        // Wait until enough L values to calculate next D have been computed
         bool D_ready = false;
         while(!D_ready)
         {
@@ -319,6 +350,7 @@ void cholesky_band_serial_index_handling_omp_v3(const BandMatrix& A, BandMatrix&
         }
       }
 
+      // finish up
       done = true;
       #pragma omp taskwait
     }

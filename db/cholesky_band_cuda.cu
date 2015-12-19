@@ -41,6 +41,10 @@ void cholesky_band_parallel_cuda(
         
     cudaDeviceSynchronize();
 
+    myCudaCheck( cudaFree(devA) );
+    myCudaCheck( cudaFree(devD) );
+    myCudaCheck( cudaFree(devL) );
+
 #ifdef ENABLE_LOG
     std::cout << "cholesky on band matrix finishes... [parallel version (cuda)]\n";
 #endif
